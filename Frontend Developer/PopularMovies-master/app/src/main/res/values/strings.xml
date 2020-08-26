@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Strings for formatting movie data -->
+    // JIC: not sure if I will have to sync data later
+    <string name="sync_account_type">popularmovies.example.com</string>
+    <string name="content_authority">com.example.noble.popularmovies.app</string>
+</resources>

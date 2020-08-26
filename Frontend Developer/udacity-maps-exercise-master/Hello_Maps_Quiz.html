@@ -1,0 +1,225 @@
+<html>
+ <head>
+
+   <style type="text/css">
+      html,
+      body {
+        font-family: Arial, sans-serif;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        height: 100%;
+        position: relative;
+      }
+      input {
+        font-size: 12px;
+      }
+      h1 {
+        color: #525454;
+        font-size: 22px;
+        margin: 0 0 10px 0;
+        text-align: center;
+      }
+      #hide-listings,
+      #show-listings {
+        width: 48%;
+      }
+      hr {
+        background: #D0D7D9;
+        height: 1px;
+        margin: 20px 0 20px 0;
+        border: none;
+      }
+      #map {
+        bottom:0px;
+        height: 100%;
+        left: 362px;
+        position: absolute;
+        right: 0px;
+      }
+      .options-box {
+        background: #fff;
+        border: 1px solid #999;
+        border-radius: 3px;
+        height: 100%;
+        line-height: 35px;
+        padding: 10px 10px 30px 10px;
+        text-align: left;
+        width: 340px;
+      }
+      #pano {
+        width: 200px;
+        height: 200px;
+      }
+      .text {
+        font-size: 12px;
+      }
+      #toggle-drawing {
+        width: 27%;
+        position: relative;
+        margin-left: 10px;
+      }
+      #zoom-to-area-text {
+        position: relative;
+        width: 70%;
+      }
+      #zoom-to-area {
+        width: 24%;
+      }
+    </style>
+ </head>
+ <body>
+  <div class="container">
+    <div class="options-box">
+      <h1>Lit' Pokestops In Your Hood</h1>
+      <div>
+        <!-- TODO: turn into FAB/toggle -->
+        <input id="show-pokestops" type="button" value="Show Pokestops">
+        <input id="hide-pokestops" type="button" value="Hide Pokestops">
+      </div>
+      <div>
+        <input id="zoom-to-area-text" type="text" placeholder="Enter your area!">
+        <input id="zoom-to-area" type="button" value="Zoom">
+      </div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <script>
+    var map;
+    var markers = [];
+
+    function initMap() {
+
+      map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 11,
+        mapTypeControl: false,
+        center: {lat: 38.907192, lng: -77.036871},
+        styles:
+          [{"featureType":"all","elementType":"labels.text.fill","stylers":[{"saturation":36},{"color":"#000000"},{"lightness":40}]},{"featureType":"all","elementType":"labels.text.stroke","stylers":[{"visibility":"on"},{"color":"#000000"},{"lightness":16}]},{"featureType":"all","elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"featureType":"administrative","elementType":"geometry.fill","stylers":[{"color":"#000000"},{"lightness":20}]},{"featureType":"administrative","elementType":"geometry.stroke","stylers":[{"color":"#000000"},{"lightness":17},{"weight":1.2}]},{"featureType":"administrative.locality","elementType":"all","stylers":[{"visibility":"off"},{"invert_lightness":true}]},{"featureType":"landscape","elementType":"geometry","stylers":[{"color":"#000000"},{"lightness":20}]},{"featureType":"poi","elementType":"geometry","stylers":[{"color":"#000000"},{"lightness":21}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#000000"},{"lightness":17}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#000000"},{"lightness":29},{"weight":0.2}]},{"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#000000"},{"lightness":18}]},{"featureType":"road.local","elementType":"geometry","stylers":[{"color":"#000000"},{"lightness":16}]},{"featureType":"transit","elementType":"geometry","stylers":[{"color":"#000000"},{"lightness":19}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#000000"},{"lightness":17}]}
+          ]
+      });
+
+      // This autocomplete is for use in the geocoder entry box.
+      var zoomAutocomplete = new google.maps.places.Autocomplete(
+          document.getElementById('zoom-to-area-text'));
+      // Bias the boundaries within the map for the zoom to area text.
+      zoomAutocomplete.bindTo('bounds', map);
+
+      var locations = [
+          {title: 'Dulles Airport', location: {lat: 38.953116, lng: -77.456539}},
+          {title: 'Reagan Airport', location: {lat: 38.851242, lng: -77.040231}},
+          {title: 'Baltimore Washinton Airport', location: {lat: 39.177404, lng: -76.668392}}
+      ];
+
+      var largeInfowindow = new google.maps.InfoWindow();
+
+      // Origins, anchor positions and coordinates of the marker increase in the X
+      // direction to the right and in the Y direction down.
+      var image = {
+        url: 'http://i1.wp.com/nintendo-papercraft.com/wp-content/uploads/2014/04/pokeball.png?resize=50%2C50',
+        // This marker is 20 pixels wide by 32 pixels high.
+        size: new google.maps.Size(50, 50),
+        // The origin for this image is (0, 0).
+        origin: new google.maps.Point(0, 0),
+        // The anchor for this image is the base of the flagpole at (0, 32).
+        anchor: new google.maps.Point(0, 32)
+      };
+
+
+      for (var i = 0; i < locations.length; i++) {
+          // Get the position from the location array.
+
+          var position = locations[i].location;
+          var title = locations[i].title;
+          // Create a marker per location, and put into markers array.
+           var marker = new google.maps.Marker({
+            position: position,
+            title: title,
+            animation: google.maps.Animation.DROP,
+            id: i,
+            icon: image
+          });
+          // Push the marker to our array of markers.
+          markers.push(marker);
+          // Create an onclick event to open an infowindow at each marker.
+          marker.addListener('click', function() {
+            populateInfoWindow(this, largeInfowindow);
+          });
+        }
+        document.getElementById('show-pokestops').addEventListener('click', showListings);
+        document.getElementById('hide-pokestops').addEventListener('click', hideListings);
+
+        document.getElementById('zoom-to-area').addEventListener('click', function() {
+          zoomToArea();
+        });
+      }
+
+      function populateInfoWindow(marker, infowindow) {
+        // Check to make sure the infowindow is not already opened on this marker.
+        if (infowindow.marker != marker) {
+          infowindow.marker = marker;
+          infowindow.setContent('<div>' + marker.title + '</div>');
+          infowindow.open(map, marker);
+          // Make sure the marker property is cleared if the infowindow is closed.
+          infowindow.addListener('closeclick', function() {
+            infowindow.marker = null;
+          });
+        }
+      }
+
+      function showListings() {
+        var bounds = new google.maps.LatLngBounds();
+        // Extend the boundaries of the map for each marker and display the marker
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+          bounds.extend(markers[i].position);
+        }
+        map.fitBounds(bounds);
+      }
+
+      function hideListings() {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+      }
+
+      // This function takes the input value in the find nearby area text input
+      // locates it, and then zooms into that area. This is so that the user can
+      // show all listings, then decide to focus on one area of the map.
+      function zoomToArea() {
+        // Initialize the geocoder.
+        var geocoder = new google.maps.Geocoder();
+        // Get the address or place that the user entered.
+        var address = document.getElementById('zoom-to-area-text').value;
+        // Make sure the address isn't blank.
+        if (address == '') {
+          window.alert('You must enter an area, or address.');
+        } else {
+          // Geocode the address/area entered to get the center. Then, center the map
+          // on it and zoom in
+          geocoder.geocode(
+            { address: address,
+              componentRestrictions: {locality: 'Washington, DC'}
+            }, function(results, status) {
+              if (status == google.maps.GeocoderStatus.OK) {
+                map.setCenter(results[0].geometry.location);
+                map.setZoom(15);
+              } else {
+                window.alert('We could not find that location - try entering a more' +
+                    ' specific place.');
+              }
+            });
+        }
+      }
+
+  </script>
+
+  <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgHfnKc43uuwUDNNyc287JFAtdiAQwU2I&amp;v=3&amp;callback=initMap&amp;libraries=places">
+  </script>
+
+ </body>
+</html>

@@ -1,0 +1,3 @@
+function UrlObject(){
+	this.urls = [];
+}

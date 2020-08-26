@@ -1,0 +1,3 @@
+function NameObject(){
+	this.names = [];
+}
